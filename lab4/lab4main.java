@@ -34,6 +34,10 @@ public class lab4main {
             System.out.println("3. Sort by number of exams");
             System.out.println("4. Show all students");
             System.out.println("5. Show excellent students");
+            System.out.println("6. Show JSON of all students");
+            System.out.println("7. Save students to JSON file");
+            System.out.println("8. Load GradeBook from JSON file");
+            System.out.println("9. Clear Gradebook data");
             System.out.println("0. Exit");
             System.out.print("Choose option: ");
             int choice = scanner.nextInt();
@@ -60,6 +64,26 @@ public class lab4main {
                     GradeBook.PrintAll(students);
                 }
                 case 5 -> GradeBook.PrintExcellentStudents(students);
+                case 6 -> {
+                    System.out.println("JSON of all students:");
+                    for (GradeBook gb : students) {
+                        System.out.println(gb.toJSON());
+                    }
+                }
+                case 7 -> {
+                    System.out.print("Enter filename to save all students: ");
+                    String filename = scanner.next();
+                    GradeBook.saveAllStudentsToJSON(students, filename);
+                }
+                case 8 -> {
+                    System.out.print("Enter filename to load all students: ");
+                    String filename = scanner.next();
+                    students = GradeBook.loadAllStudentsFromJSON(filename);
+                    System.out.println("All students loaded successfully.");
+                }
+                case 9 -> {
+                    students.clear();
+                }
                 case 0 -> running = false;
                 default -> System.out.println("Invalid option. Try again.");
             }

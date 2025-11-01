@@ -1,6 +1,7 @@
 package lab4;
 
 import java.util.*;
+import org.json.JSONObject;
 
 class GradeBook {
 
@@ -119,7 +120,6 @@ class GradeBook {
                         sessions.add(sessionExams);
                         break;
                     } catch (NumberFormatException e) {
-                        // Продолжаем искать число
                         continue;
                     }
                 }
@@ -129,6 +129,7 @@ class GradeBook {
        
         RecalculateAverage();
     }
+    
     public String Output() {
         RecalculateAverage();
         StringBuilder out = new StringBuilder();
@@ -163,4 +164,99 @@ class GradeBook {
             System.out.println(gb.Output());
         }
     }
+
+    public String toJSON() {
+        JSONObject json = new JSONObject();
+        json.put("name", name);
+        json.put("averageGrade", avergrade);
+    
+        for (int i = 0; i < sessions.size(); i++) {
+            JSONObject session = new JSONObject();
+            for (Exams e : sessions.get(i)) {
+                JSONObject exam = new JSONObject();
+                exam.put("subject", e.subject);
+                exam.put("grade", e.grade);
+                exam.put("teacher", e.teacher);
+                session.append("exams", exam);
+            }
+            json.append("sessions", session);
+        }
+    
+        return json.toString(4);
+    }
+
+    public void writeToJSONFile(String filename) {
+        try (java.io.FileWriter file = new java.io.FileWriter(filename)) {
+            file.write(this.toJSON());
+            System.out.println("Data successfully written to " + filename);
+        } catch (java.io.IOException e) {
+            System.out.println("Error writing to file: " + e.getMessage());
+        }
+    }
+
+    public static void saveAllStudentsToJSON(Vector<GradeBook> students, String filename) {
+        try (java.io.FileWriter file = new java.io.FileWriter(filename)) {
+            org.json.JSONArray jsonArray = new org.json.JSONArray();
+            for (GradeBook gb : students) {
+                jsonArray.put(new org.json.JSONObject(gb.toJSON()));
+            }
+            file.write(jsonArray.toString(4));
+            System.out.println("All students successfully saved to " + filename);
+        } catch (java.io.IOException e) {
+            System.out.println("Error writing to file: " + e.getMessage());
+        }
+    }
+    
+    public void readFromJSONString(String jsonString) {
+        try {
+            org.json.JSONObject json = new org.json.JSONObject(jsonString);
+            this.name = json.getString("name");
+            this.avergrade = json.getDouble("averageGrade");
+    
+            this.sessions.clear();
+            org.json.JSONArray jsonSessions = json.getJSONArray("sessions");
+            for (int i = 0; i < jsonSessions.length(); i++) {
+                org.json.JSONObject jsonSession = jsonSessions.getJSONObject(i);
+                org.json.JSONArray jsonExams = jsonSession.getJSONArray("exams");
+    
+                Vector<Exams> session = new Vector<>();
+                for (int j = 0; j < jsonExams.length(); j++) {
+                    org.json.JSONObject jsonExam = jsonExams.getJSONObject(j);
+                    String subject = jsonExam.getString("subject");
+                    int grade = jsonExam.getInt("grade");
+                    String teacher = jsonExam.getString("teacher");
+                    session.add(new Exams(subject, grade, teacher));
+                }
+                this.sessions.add(session);
+            }
+        } catch (Exception e) {
+            System.out.println("Error reading from JSON string: " + e.getMessage());
+        }
+    }
+
+    public static Vector<GradeBook> loadAllStudentsFromJSON(String filename) {
+        Vector<GradeBook> students = new Vector<>();
+        try (java.util.Scanner scanner = new java.util.Scanner(new java.io.File(filename))) {
+            StringBuilder jsonContent = new StringBuilder();
+            while (scanner.hasNextLine()) {
+                jsonContent.append(scanner.nextLine());
+            }
+    
+            org.json.JSONArray jsonArray = new org.json.JSONArray(jsonContent.toString());
+            for (int i = 0; i < jsonArray.length(); i++) {
+                org.json.JSONObject jsonObject = jsonArray.getJSONObject(i);
+                GradeBook gb = new GradeBook();
+                gb.readFromJSONString(jsonObject.toString());
+                students.add(gb);
+            }
+    
+            System.out.println("All students successfully loaded from " + filename);
+        } catch (java.io.FileNotFoundException e) {
+            System.out.println("File not found: " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("Error reading from file: " + e.getMessage());
+        }
+        return students;
+    }
+
 }
